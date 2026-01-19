@@ -65,5 +65,9 @@ public class GameService {
     public Mono<Game> getGameById(String gameId) {
         return gameRepository.findById(gameId);
     }
+
+    public Mono<Void> deleteGameById(String gameId) {
+        return gameRepository.deleteById(gameId);
+    }
 }
 

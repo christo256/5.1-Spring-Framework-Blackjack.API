@@ -6,6 +6,7 @@ import com.blackjack.blackjack.service.GameService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -30,5 +31,16 @@ public class GameController {
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
+
+    @DeleteMapping("/{id}/delete")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> deleteGame(@PathVariable String id) {
+        return gameService.getGameById(id)
+                .flatMap(game -> gameService.deleteGameById(id))
+                .switchIfEmpty(Mono.error(new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Game not found"
+                )));
+    }
+
 
 }
