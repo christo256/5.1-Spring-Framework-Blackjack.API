@@ -1,9 +1,6 @@
 package com.blackjack.blackjack.service;
 
-import com.blackjack.blackjack.domain.mongo.Card;
-import com.blackjack.blackjack.domain.mongo.Game;
-import com.blackjack.blackjack.domain.mongo.GameStatus;
-import com.blackjack.blackjack.domain.mongo.Hand;
+import com.blackjack.blackjack.domain.mongo.*;
 import com.blackjack.blackjack.repository.mongo.GameRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -68,6 +65,58 @@ public class GameService {
 
     public Mono<Void> deleteGameById(String gameId) {
         return gameRepository.deleteById(gameId);
+    }
+
+    public Mono<Game> play(String gameId, MoveType move) {
+
+        return gameRepository.findById(gameId)
+                .switchIfEmpty(Mono.error(new IllegalStateException("Game not found")))
+                .flatMap(game -> {
+
+                    if (game.getStatus() != GameStatus.IN_PROGRESS) {
+                        return Mono.error(new IllegalStateException("Game already finished"));
+                    }
+
+                    if (move == MoveType.HIT) {
+                        game.getPlayerHand().addCard(drawRandomCard());
+
+                        if (game.getPlayerHand().isBust()) {
+                            game.setStatus(GameStatus.PLAYER_BUST);
+                        }
+
+                    } else if (move == MoveType.STAND) {
+                        playDealer(game);
+                        resolveGame(game);
+                    }
+
+                    return gameRepository.save(game);
+                });
+    }
+
+    private void playDealer(Game game) {
+        while (game.getDealerHand().getScore() < 17) {
+            game.getDealerHand().addCard(drawRandomCard());
+        }
+    }
+
+    private void resolveGame(Game game) {
+
+        if (game.getDealerHand().isBust()) {
+            game.setStatus(GameStatus.DEALER_BUST);
+            return;
+        }
+
+        int playerScore = game.getPlayerHand().getScore();
+        int dealerScore = game.getDealerHand().getScore();
+
+        if (playerScore > dealerScore) {
+            game.setStatus(GameStatus.PLAYER_WIN);
+        } else if (dealerScore > playerScore) {
+            game.setStatus(GameStatus.DEALER_WIN);
+        } else {
+            game.setStatus(GameStatus.PUSH);
+        }
+
     }
 }
 

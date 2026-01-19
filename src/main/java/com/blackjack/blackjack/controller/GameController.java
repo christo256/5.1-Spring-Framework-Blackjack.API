@@ -2,6 +2,7 @@ package com.blackjack.blackjack.controller;
 
 import com.blackjack.blackjack.domain.mongo.Game;
 import com.blackjack.blackjack.dto.CreateGameRequest;
+import com.blackjack.blackjack.dto.PlayGameRequest;
 import com.blackjack.blackjack.service.GameService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,5 +43,11 @@ public class GameController {
                 )));
     }
 
-
+    @PostMapping("/{id}/play")
+    public Mono<Game> play(
+            @PathVariable String id,
+            @RequestBody PlayGameRequest request
+    ) {
+        return gameService.play(id, request.getMove());
+    }
 }
