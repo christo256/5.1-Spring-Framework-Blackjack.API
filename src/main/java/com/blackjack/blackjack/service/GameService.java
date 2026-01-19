@@ -61,5 +61,9 @@ public class GameService {
 
         return new Card(suit, rank, value);
     }
+
+    public Mono<Game> getGameById(String gameId) {
+        return gameRepository.findById(gameId);
+    }
 }
 
