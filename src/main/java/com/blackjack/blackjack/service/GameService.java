@@ -5,12 +5,14 @@ import com.blackjack.blackjack.domain.mongo.Game;
 import com.blackjack.blackjack.domain.mongo.GameStatus;
 import com.blackjack.blackjack.domain.mongo.Hand;
 import com.blackjack.blackjack.repository.mongo.GameRepository;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Random;
 
+@Service
 public class GameService {
 
     private final GameRepository gameRepository;
