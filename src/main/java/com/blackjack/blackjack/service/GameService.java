@@ -2,6 +2,8 @@ package com.blackjack.blackjack.service;
 
 import com.blackjack.blackjack.domain.mongo.*;
 import com.blackjack.blackjack.repository.mongo.GameRepository;
+import com.blackjack.blackjack.exception.GameNotFoundException;
+import com.blackjack.blackjack.exception.InvalidGameStateException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -60,21 +62,25 @@ public class GameService {
     }
 
     public Mono<Game> getGameById(String gameId) {
-        return gameRepository.findById(gameId);
+        return gameRepository.findById(gameId)
+                .switchIfEmpty(Mono.error(new GameNotFoundException(gameId)));
     }
 
     public Mono<Void> deleteGameById(String gameId) {
-        return gameRepository.deleteById(gameId);
+        return gameRepository.deleteById(gameId)
+                .switchIfEmpty(Mono.error(new GameNotFoundException(gameId)))
+                .flatMap(game -> gameRepository.deleteById(gameId));
+
     }
 
     public Mono<Game> play(String gameId, MoveType move) {
 
         return gameRepository.findById(gameId)
-                .switchIfEmpty(Mono.error(new IllegalStateException("Game not found")))
+                .switchIfEmpty(Mono.error(new GameNotFoundException(gameId)))
                 .flatMap(game -> {
 
                     if (game.getStatus() != GameStatus.IN_PROGRESS) {
-                        return Mono.error(new IllegalStateException("Game already finished"));
+                        return Mono.error(new InvalidGameStateException("Game already finished"));
                     }
 
                     if (move == MoveType.HIT) {
