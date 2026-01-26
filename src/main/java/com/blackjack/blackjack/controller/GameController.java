@@ -27,20 +27,14 @@ public class GameController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Game>> getGameById(@PathVariable String id) {
-        return gameService.getGameById(id)
-                .map(ResponseEntity::ok)
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+    public Mono<Game> getGameById(@PathVariable String id) {
+        return gameService.getGameById(id);
     }
 
     @DeleteMapping("/{id}/delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> deleteGame(@PathVariable String id) {
-        return gameService.getGameById(id)
-                .flatMap(game -> gameService.deleteGameById(id))
-                .switchIfEmpty(Mono.error(new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Game not found"
-                )));
+        return gameService.deleteGameById(id);
     }
 
     @PostMapping("/{id}/play")
