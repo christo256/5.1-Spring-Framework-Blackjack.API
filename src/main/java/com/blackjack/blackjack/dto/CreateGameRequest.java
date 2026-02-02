@@ -1,13 +1,5 @@
 package com.blackjack.blackjack.dto;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+public record CreateGameRequest(String playerName) {
 
-@Getter
-@Setter
-@NoArgsConstructor
-public class CreateGameRequest {
-
-    private String playerName;
 }
