@@ -2,7 +2,9 @@ package com.blackjack.blackjack.controller;
 
 import com.blackjack.blackjack.domain.mongo.Game;
 import com.blackjack.blackjack.dto.CreateGameRequest;
+import com.blackjack.blackjack.dto.GameResponse;
 import com.blackjack.blackjack.dto.PlayGameRequest;
+import com.blackjack.blackjack.mapper.GameMapper;
 import com.blackjack.blackjack.service.GameService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +24,15 @@ public class GameController {
 
     @PostMapping("/new")
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Game> createGame(@RequestBody CreateGameRequest request) {
-        return gameService.createGame(request.getPlayerName());
+    public Mono<GameResponse> createGame(@RequestBody CreateGameRequest request) {
+        return gameService.createGame(request.playerName())
+                .map(GameMapper::toResponse);
     }
 
     @GetMapping("/{id}")
-    public Mono<Game> getGameById(@PathVariable String id) {
-        return gameService.getGameById(id);
+    public Mono<GameResponse> getGameById(@PathVariable String id) {
+        return gameService.getGameById(id)
+                .map(GameMapper::toResponse);
     }
 
     @DeleteMapping("/{id}/delete")
@@ -38,10 +42,11 @@ public class GameController {
     }
 
     @PostMapping("/{id}/play")
-    public Mono<Game> play(
+    public Mono<GameResponse> play(
             @PathVariable String id,
             @RequestBody PlayGameRequest request
     ) {
-        return gameService.play(id, request.getMove());
+        return gameService.play(id, request.move())
+                .map(GameMapper::toResponse);
     }
 }
