@@ -1,6 +1,8 @@
 package com.blackjack.blackjack.service;
 
 import com.blackjack.blackjack.domain.mongo.*;
+import com.blackjack.blackjack.domain.mongo.enums.Rank;
+import com.blackjack.blackjack.domain.mongo.enums.Suit;
 import com.blackjack.blackjack.repository.mongo.GameRepository;
 import com.blackjack.blackjack.exception.GameNotFoundException;
 import com.blackjack.blackjack.exception.InvalidGameStateException;
@@ -16,61 +18,35 @@ public class GameService {
 
     private final GameRepository gameRepository;
     private final Random random = new Random();
+    private final DeckService deckService;
 
-    public GameService(GameRepository gameRepository) {
+    public GameService(GameRepository gameRepository, DeckService deckService) {
         this.gameRepository = gameRepository;
+        this.deckService = deckService;
     }
 
     public Mono<Game> createGame(String playerName) {
 
+        Game game = new Game();
+        game.setPlayerName(playerName);
+        game.setCreatedAt(Instant.now());
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+
+        game.setDeck(deckService.createNewDeck());
+
         Hand playerHand = new Hand();
         Hand dealerHand = new Hand();
 
-        playerHand.addCard(drawRandomCard());
-        playerHand.addCard(drawRandomCard());
+        playerHand.addCard(game.drawFromDeck());
+        playerHand.addCard(game.drawFromDeck());
+        dealerHand.addCard(game.drawFromDeck());
+        dealerHand.addCard(game.drawFromDeck());
 
-        dealerHand.addCard(drawRandomCard());
-        dealerHand.addCard(drawRandomCard());
-
-        Game game = new Game();
-        game.setPlayerName(playerName);
         game.setPlayerHand(playerHand);
         game.setDealerHand(dealerHand);
-        game.setStatus(GameStatus.IN_PROGRESS);
-        game.setCreatedAt(Instant.now());
 
         return gameRepository.save(game);
-    }
-
-    private Card drawRandomCard() {
-        List<String> suits = List.of("HEARTS", "DIAMONDS", "CLUBS", "SPADES");
-        List<String> ranks = List.of("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A");
-
-        String suit = suits.get(random.nextInt(suits.size()));
-        String rank = ranks.get(random.nextInt(ranks.size()));
-
-        int value;
-        if ("JQK".contains(rank)) {
-            value = 10;
-        } else if ("A".equals(rank)) {
-            value = 11;
-        } else {
-            value = Integer.parseInt(rank);
-        }
-
-        return new Card(suit, rank, value);
-    }
-
-    public Mono<Game> getGameById(String gameId) {
-        return gameRepository.findById(gameId)
-                .switchIfEmpty(Mono.error(new GameNotFoundException(gameId)));
-    }
-
-    public Mono<Void> deleteGameById(String gameId) {
-        return gameRepository.deleteById(gameId)
-                .switchIfEmpty(Mono.error(new GameNotFoundException(gameId)))
-                .flatMap(game -> gameRepository.deleteById(gameId));
-
     }
 
     public Mono<Game> play(String gameId, MoveType move) {
@@ -84,7 +60,7 @@ public class GameService {
                     }
 
                     if (move == MoveType.HIT) {
-                        game.getPlayerHand().addCard(drawRandomCard());
+                        game.getPlayerHand().addCard(game.drawFromDeck());
 
                         if (game.getPlayerHand().isBust()) {
                             game.setStatus(GameStatus.PLAYER_BUST);
@@ -101,7 +77,7 @@ public class GameService {
 
     private void playDealer(Game game) {
         while (game.getDealerHand().getScore() < 17) {
-            game.getDealerHand().addCard(drawRandomCard());
+            game.getDealerHand().addCard(game.drawFromDeck());
         }
     }
 
@@ -123,6 +99,18 @@ public class GameService {
             game.setStatus(GameStatus.PUSH);
         }
 
+    }
+
+    public Mono<Game> getGameById(String gameId) {
+        return gameRepository.findById(gameId)
+                .switchIfEmpty(Mono.error(new GameNotFoundException(gameId)));
+    }
+
+    public Mono<Void> deleteGameById(String gameId) {
+        return gameRepository.existsById(gameId)
+                .flatMap(exists -> exists
+                        ? gameRepository.deleteById(gameId)
+                        : Mono.error(new GameNotFoundException(gameId)));
     }
 }
 
