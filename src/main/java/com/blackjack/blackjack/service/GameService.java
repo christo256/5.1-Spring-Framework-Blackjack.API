@@ -14,12 +14,13 @@ import java.util.Random;
 public class GameService {
 
     private final GameRepository gameRepository;
-    private final Random random = new Random();
     private final DeckService deckService;
+    private final PlayerService playerService;
 
-    public GameService(GameRepository gameRepository, DeckService deckService) {
+    public GameService(GameRepository gameRepository, DeckService deckService, PlayerService playerService) {
         this.gameRepository = gameRepository;
         this.deckService = deckService;
+        this.playerService = playerService;
     }
 
     public Mono<Game> createGame(String playerName) {
@@ -80,8 +81,13 @@ public class GameService {
 
     private void resolveGame(Game game) {
 
+        Long playerId = Long.valueOf(game.getPlayerId());
+
+        playerService.recordGamePlayed(playerId);
+
         if (game.getDealerHand().isBust()) {
             game.setStatus(GameStatus.DEALER_BUST);
+            playerService.recordWin(playerId);
             return;
         }
 
@@ -90,6 +96,8 @@ public class GameService {
 
         if (playerScore > dealerScore) {
             game.setStatus(GameStatus.PLAYER_WIN);
+            playerService.recordWin(playerId);
+
         } else if (dealerScore > playerScore) {
             game.setStatus(GameStatus.DEALER_WIN);
         } else {
