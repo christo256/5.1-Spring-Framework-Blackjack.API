@@ -1,5 +1,6 @@
 package com.blackjack.blackjack.exception;
 
+import com.blackjack.blackjack.domain.mongo.Hand;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -38,6 +39,18 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 HttpStatus.NOT_FOUND.name(),
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+    }
+
+    @ExceptionHandler(DeckEmptyException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleDeckEmpty(DeckEmptyException exception) {
+
+        return new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.name(),
                 exception.getMessage(),
                 LocalDateTime.now()
         );
