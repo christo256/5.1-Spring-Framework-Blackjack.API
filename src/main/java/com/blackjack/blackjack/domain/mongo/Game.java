@@ -1,5 +1,6 @@
 package com.blackjack.blackjack.domain.mongo;
 
+import com.blackjack.blackjack.exception.DeckEmptyException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Document(collection = "games")
 @Getter
@@ -25,7 +28,15 @@ public class Game {
     private Hand playerHand;
     private Hand dealerHand;
 
+    private List<Card> deck = new ArrayList<>();
+
     private GameStatus status;
     private Instant createdAt;
-}
 
+    public Card drawFromDeck() {
+        if (deck == null || deck.isEmpty()) {
+            throw new DeckEmptyException();
+        }
+        return deck.remove(0);
+    }
+}
