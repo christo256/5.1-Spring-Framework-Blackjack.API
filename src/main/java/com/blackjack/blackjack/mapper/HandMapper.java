@@ -7,9 +7,13 @@ import java.util.List;
 
 public class HandMapper {
 
-    private HandMapper() {}
+    private HandMapper() {
+    }
 
     public static List<CardResponse> toCardResponses(Hand hand) {
+        if (hand == null || hand.getCards() == null) {
+            return List.of();
+        }
         return hand.getCards()
                 .stream()
                 .map(CardMapper::toResponse)

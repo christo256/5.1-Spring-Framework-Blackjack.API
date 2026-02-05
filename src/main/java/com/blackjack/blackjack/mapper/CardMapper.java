@@ -9,8 +9,8 @@ public class CardMapper {
 
     public static CardResponse toResponse(Card card) {
         return new CardResponse(
-                card.getSuit(),
-                card.getRank(),
+                card.getSuit().name(),
+                card.getRank().name(),
                 card.getValue()
         );
     }
