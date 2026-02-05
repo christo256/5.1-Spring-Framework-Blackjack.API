@@ -2,7 +2,7 @@ package com.blackjack.blackjack.controller;
 
 import com.blackjack.blackjack.dto.PlayerRankingResponse;
 import com.blackjack.blackjack.dto.UpdatePlayerNameRequest;
-import com.blackjack.blackjack.service.PlayerService;
+import com.blackjack.blackjack.service.player.PlayerService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

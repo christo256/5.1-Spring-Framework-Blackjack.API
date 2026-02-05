@@ -4,7 +4,7 @@ import com.blackjack.blackjack.dto.CreateGameRequest;
 import com.blackjack.blackjack.dto.GameResponse;
 import com.blackjack.blackjack.dto.PlayGameRequest;
 import com.blackjack.blackjack.mapper.GameMapper;
-import com.blackjack.blackjack.service.GameService;
+import com.blackjack.blackjack.service.game.GameService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;

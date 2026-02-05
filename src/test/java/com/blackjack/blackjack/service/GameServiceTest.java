@@ -3,6 +3,7 @@ package com.blackjack.blackjack.service;
 import com.blackjack.blackjack.domain.mongo.Game;
 import com.blackjack.blackjack.exception.GameNotFoundException;
 import com.blackjack.blackjack.repository.mongo.GameRepository;
+import com.blackjack.blackjack.service.game.GameService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -1,7 +1,7 @@
 package com.blackjack.blackjack.controller;
 
 import com.blackjack.blackjack.domain.mongo.Game;
-import com.blackjack.blackjack.service.GameService;
+import com.blackjack.blackjack.service.game.GameService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
