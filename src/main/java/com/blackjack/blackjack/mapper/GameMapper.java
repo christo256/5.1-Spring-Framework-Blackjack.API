@@ -8,6 +8,11 @@ public class GameMapper {
     private GameMapper() {}
 
     public static GameResponse toResponse(Game game) {
+
+        if (game == null) {
+            return null;
+    }
+
         return new GameResponse(
                 game.getId(),
                 game.getPlayerName(),
