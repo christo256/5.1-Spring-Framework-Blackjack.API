@@ -1,0 +1,7 @@
+package com.blackjack.repository.mongo;
+
+import com.blackjack.domain.mongo.Game;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+
+public interface GameRepository extends ReactiveMongoRepository<Game, String> {
+}
