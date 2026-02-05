@@ -2,6 +2,7 @@ package com.blackjack.blackjack.exception;
 
 import com.blackjack.blackjack.domain.mongo.Hand;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -55,4 +56,23 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
     }
-}
+
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        @ResponseStatus(HttpStatus.BAD_REQUEST)
+        public ErrorResponse handleValidation(MethodArgumentNotValidException ex) {
+
+            String message = ex.getBindingResult()
+                    .getFieldErrors()
+                    .stream()
+                    .findFirst()
+                    .map(error -> error.getDefaultMessage())
+                    .orElse("Validation error");
+
+            return new ErrorResponse(
+                    HttpStatus.BAD_REQUEST.value(),
+                    HttpStatus.BAD_REQUEST.name(),
+                    message,
+                    LocalDateTime.now()
+            );
+        }
+    }
