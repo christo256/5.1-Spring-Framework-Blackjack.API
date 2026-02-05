@@ -1,14 +1,15 @@
-package com.blackjack.blackjack.service;
+package com.blackjack.blackjack.service.game;
 
 import com.blackjack.blackjack.domain.mongo.*;
 import com.blackjack.blackjack.repository.mongo.GameRepository;
 import com.blackjack.blackjack.exception.GameNotFoundException;
 import com.blackjack.blackjack.exception.InvalidGameStateException;
+import com.blackjack.blackjack.service.player.PlayerService;
+import com.blackjack.blackjack.service.player.PlayerStatsService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.util.Random;
 
 @Service
 public class GameService {
@@ -16,11 +17,15 @@ public class GameService {
     private final GameRepository gameRepository;
     private final DeckService deckService;
     private final PlayerService playerService;
+    private final BlackJackRulesService blackJackRulesService;
+    private final PlayerStatsService playerStatsService;
 
-    public GameService(GameRepository gameRepository, DeckService deckService, PlayerService playerService) {
+    public GameService(GameRepository gameRepository, DeckService deckService, PlayerService playerService, BlackJackRulesService blackJackRulesService, PlayerStatsService playerStatsService) {
         this.gameRepository = gameRepository;
         this.deckService = deckService;
         this.playerService = playerService;
+        this.blackJackRulesService = blackJackRulesService;
+        this.playerStatsService = playerStatsService;
     }
 
     public Mono<Game> createGame(String playerName) {
@@ -57,54 +62,36 @@ public class GameService {
                         return Mono.error(new InvalidGameStateException("Game already finished"));
                     }
 
+                    if (game.getPlayerId() == null) {
+                        return Mono.error(new InvalidGameStateException("Game has no player assigned"));
+                    }
+                    Long playerId = Long.valueOf(game.getPlayerId());
+
                     if (move == MoveType.HIT) {
+
                         game.getPlayerHand().addCard(game.drawFromDeck());
 
                         if (game.getPlayerHand().isBust()) {
                             game.setStatus(GameStatus.PLAYER_BUST);
+
+                            playerStatsService.updateStats(playerId, GameStatus.PLAYER_BUST);
                         }
 
                     } else if (move == MoveType.STAND) {
-                        playDealer(game);
-                        resolveGame(game);
+
+                        blackJackRulesService.playDealer(game);
+
+                        GameStatus result = blackJackRulesService.resolveGame(game);
+                        game.setStatus(result);
+
+                        playerStatsService.updateStats(playerId, result);
                     }
 
                     return gameRepository.save(game);
                 });
     }
 
-    private void playDealer(Game game) {
-        while (game.getDealerHand().getScore() < 17) {
-            game.getDealerHand().addCard(game.drawFromDeck());
-        }
-    }
 
-    private void resolveGame(Game game) {
-
-        Long playerId = Long.valueOf(game.getPlayerId());
-
-        playerService.recordGamePlayed(playerId);
-
-        if (game.getDealerHand().isBust()) {
-            game.setStatus(GameStatus.DEALER_BUST);
-            playerService.recordWin(playerId);
-            return;
-        }
-
-        int playerScore = game.getPlayerHand().getScore();
-        int dealerScore = game.getDealerHand().getScore();
-
-        if (playerScore > dealerScore) {
-            game.setStatus(GameStatus.PLAYER_WIN);
-            playerService.recordWin(playerId);
-
-        } else if (dealerScore > playerScore) {
-            game.setStatus(GameStatus.DEALER_WIN);
-        } else {
-            game.setStatus(GameStatus.PUSH);
-        }
-
-    }
 
     public Mono<Game> getGameById(String gameId) {
         return gameRepository.findById(gameId)
