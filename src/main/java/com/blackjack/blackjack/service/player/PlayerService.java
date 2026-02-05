@@ -17,6 +17,15 @@ public class PlayerService {
         this.playerRepository = playerRepository;
     }
 
+    public Player findOrCreate(String playerName) {
+
+        return playerRepository.findByName(playerName)
+                .orElseGet(() -> {
+                    Player newPlayer = new Player(playerName);
+                    return playerRepository.save(newPlayer);
+                });
+    }
+
     public void updatePlayerName(Long id, String newName) {
         Player player = playerRepository.findById(id)
                 .orElseThrow(() -> new PlayerNotFoundException(id));
