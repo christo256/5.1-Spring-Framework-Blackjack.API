@@ -1,6 +1,7 @@
 package com.blackjack.blackjack.service.game;
 
 import com.blackjack.blackjack.domain.mongo.*;
+import com.blackjack.blackjack.domain.sql.Player;
 import com.blackjack.blackjack.repository.mongo.GameRepository;
 import com.blackjack.blackjack.exception.GameNotFoundException;
 import com.blackjack.blackjack.exception.InvalidGameStateException;
@@ -30,7 +31,10 @@ public class GameService {
 
     public Mono<Game> createGame(String playerName) {
 
+        Player player = playerService.findOrCreate(playerName);
+
         Game game = new Game();
+        game.setPlayerId(String.valueOf(player.getId()));
         game.setPlayerName(playerName);
         game.setCreatedAt(Instant.now());
         game.setStatus(GameStatus.IN_PROGRESS);
