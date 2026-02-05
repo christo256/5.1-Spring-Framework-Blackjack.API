@@ -1,5 +1,6 @@
 package com.blackjack.blackjack.domain.mongo;
 
+import com.blackjack.blackjack.domain.mongo.enums.Rank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,10 +20,11 @@ public class Hand {
     }
 
     private void recalculateScore() {
+
         int total = cards.stream().mapToInt(Card::getValue).sum();
 
         long aces = cards.stream()
-                .filter(c -> "A".equals(c.getRank()))
+                .filter(card -> card.getRank() == Rank.A)
                 .count();
 
         while (total > 21 && aces > 0) {
