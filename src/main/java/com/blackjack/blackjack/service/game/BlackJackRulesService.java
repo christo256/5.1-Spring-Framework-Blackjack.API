@@ -1,4 +1,4 @@
-package com.blackjack.blackjack.service;
+package com.blackjack.blackjack.service.game;
 
 import com.blackjack.blackjack.domain.mongo.Game;
 import com.blackjack.blackjack.domain.mongo.GameStatus;

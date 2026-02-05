@@ -1,4 +1,4 @@
-package com.blackjack.blackjack.service;
+package com.blackjack.blackjack.service.player;
 
 import com.blackjack.blackjack.domain.sql.Player;
 import com.blackjack.blackjack.dto.PlayerRankingResponse;

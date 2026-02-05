@@ -1,4 +1,4 @@
-package com.blackjack.blackjack.service;
+package com.blackjack.blackjack.service.player;
 
 import com.blackjack.blackjack.domain.mongo.GameStatus;
 import org.springframework.stereotype.Service;
