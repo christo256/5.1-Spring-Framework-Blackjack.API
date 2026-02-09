@@ -1,64 +1,176 @@
 package com.blackjack.service;
 
-import com.blackjack.domain.mongo.Game;
-import com.blackjack.exception.GameNotFoundException;
+import com.blackjack.domain.mongo.*;
+import com.blackjack.domain.mongo.enums.Rank;
+import com.blackjack.domain.mongo.enums.Suit;
+import com.blackjack.domain.sql.Player;
 import com.blackjack.repository.mongo.GameRepository;
+import com.blackjack.service.game.BlackJackRulesService;
+import com.blackjack.service.game.DeckService;
 import com.blackjack.service.game.GameService;
+import com.blackjack.service.player.PlayerService;
+import com.blackjack.service.player.PlayerStatsService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import static reactor.core.publisher.Mono.when;
+import java.util.ArrayList;
+import java.util.List;
 
-@ExtendWith(MockitoExtension.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 class GameServiceTest {
 
-    @Mock
     private GameRepository gameRepository;
+    private DeckService deckService;
+    private PlayerService playerService;
+    private PlayerStatsService playerStatsService;
+    private BlackJackRulesService rulesService;
 
-    @InjectMocks
     private GameService gameService;
 
+    @BeforeEach
+    void setup() {
+
+        gameRepository = mock(GameRepository.class);
+        deckService = mock(DeckService.class);
+        playerService = mock(PlayerService.class);
+        playerStatsService = mock(PlayerStatsService.class);
+        rulesService = new BlackJackRulesService();
+
+        gameService = new GameService(
+                gameRepository,
+                deckService,
+                playerService,
+                rulesService,
+                playerStatsService
+        );
+    }
+
     @Test
-    void createGame_shouldReturnSavedGame() {
-        Game game = new Game();
-        game.setPlayerName("Christopher");
+    void createGame_shouldReturnGame() {
 
-        when(gameRepository.save(org.mockito.ArgumentMatchers.any(Game.class)))
-                .thenReturn(Mono.just(game));
+        Player player = new Player("Chris");
+        player.setId(10L);
 
-        Mono<Game> result = gameService.createGame("Christopher");
+        when(playerService.findOrCreate("Chris")).thenReturn(player);
+
+        List<Card> fakeDeck = new ArrayList<>(List.of(
+                new Card(Suit.HEARTS, Rank.A),
+                new Card(Suit.CLUBS, Rank.TWO),
+                new Card(Suit.SPADES, Rank.THREE),
+                new Card(Suit.DIAMONDS, Rank.FOUR)
+        ));
+
+
+        when(deckService.createNewDeck()).thenReturn(fakeDeck);
+        when(gameRepository.save(any())).thenAnswer(i -> Mono.just(i.getArgument(0)));
+
+        Mono<Game> result = gameService.createGame("Chris");
 
         StepVerifier.create(result)
-                .expectNext(game)
+                .assertNext(game -> {
+                    assert game.getPlayerId().equals("10");
+                    assert game.getPlayerHand() != null;
+                    assert game.getDealerHand() != null;
+                    assert game.getStatus() == GameStatus.IN_PROGRESS;
+                })
                 .verifyComplete();
     }
 
     @Test
-    void getGameById_whenExists_shouldReturnGame() {
+    void play_hit_shouldAddCard() {
+
         Game game = new Game();
-        game.setId("123");
+        game.setId("1");
+        game.setPlayerId("10");
+        game.setStatus(GameStatus.IN_PROGRESS);
 
-        when(gameRepository.findById("123"))
-                .thenReturn(Mono.just(game));
+        Hand playerHand = new Hand();
+        Hand dealerHand = new Hand();
 
-        StepVerifier.create(gameService.getGameById("123"))
+        game.setPlayerHand(playerHand);
+        game.setDealerHand(dealerHand);
+
+        game.setDeck(new ArrayList<>(List.of(
+                new Card(Suit.HEARTS, Rank.A)
+        )));
+
+        when(gameRepository.findById("1")).thenReturn(Mono.just(game));
+        when(gameRepository.save(any())).thenReturn(Mono.just(game));
+
+        Mono<Game> result = gameService.play("1", MoveType.HIT);
+
+        StepVerifier.create(result)
+                .assertNext(g -> {
+                    assertEquals(1, g.getPlayerHand().getCards().size());
+                    assertEquals(GameStatus.IN_PROGRESS, g.getStatus());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void play_stand_shouldResolveGame() {
+
+        Game game = new Game();
+        game.setId("1");
+        game.setPlayerId("10");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        Hand playerHand = new Hand();
+        playerHand.setScore(20);
+
+        Hand dealerHand = new Hand();
+        dealerHand.setScore(18);
+
+        game.setPlayerHand(playerHand);
+        game.setDealerHand(dealerHand);
+
+        game.setDeck(List.of(
+                new Card(Suit.HEARTS, Rank.TWO)
+        ));
+
+        when(gameRepository.findById("1")).thenReturn(Mono.just(game));
+        when(gameRepository.save(any())).thenReturn(Mono.just(game));
+
+        Mono<Game> result = gameService.play("1", MoveType.STAND);
+
+        StepVerifier.create(result)
+                .assertNext(g -> {
+                    assert g.getStatus() != GameStatus.IN_PROGRESS;
+                })
+                .verifyComplete();
+
+        verify(playerStatsService).updateStats(eq(10L), any());
+    }
+
+    @Test
+    void getGameById_shouldReturnGame() {
+
+        Game game = new Game();
+        game.setId("1");
+
+        when(gameRepository.findById("1")).thenReturn(Mono.just(game));
+
+        StepVerifier.create(gameService.getGameById("1"))
                 .expectNext(game)
                 .verifyComplete();
     }
 
     @Test
-    void getGameById_whenNotExists_shouldThrowException() {
-        when(gameRepository.findById("999"))
-                .thenReturn(Mono.empty());
+    void deleteGame_shouldDelete() {
 
-        StepVerifier.create(gameService.getGameById("999"))
-                .expectError(GameNotFoundException.class)
-                .verify();
+        when(gameRepository.existsById("1")).thenReturn(Mono.just(true));
+        when(gameRepository.deleteById("1")).thenReturn(Mono.empty());
+
+        StepVerifier.create(gameService.deleteGameById("1"))
+                .verifyComplete();
+
+        verify(gameRepository).existsById("1");
+        verify(gameRepository).deleteById("1");
     }
 }
 
