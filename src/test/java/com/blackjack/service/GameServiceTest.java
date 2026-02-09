@@ -172,5 +172,41 @@ class GameServiceTest {
         verify(gameRepository).existsById("1");
         verify(gameRepository).deleteById("1");
     }
+
+    @Test
+    void deleteGame_whenNotExists_shouldError() {
+
+        when(gameRepository.existsById("1")).thenReturn(Mono.just(false));
+
+        StepVerifier.create(gameService.deleteGameById("1"))
+                .expectError()
+                .verify();
+    }
+
+
+    @Test
+    void play_whenGameNotFound_shouldError() {
+
+        when(gameRepository.findById("1")).thenReturn(Mono.empty());
+
+        StepVerifier.create(gameService.play("1", MoveType.HIT))
+                .expectError()
+                .verify();
+    }
+
+    @Test
+    void play_whenGameFinished_shouldError() {
+
+        Game game = new Game();
+        game.setId("1");
+        game.setStatus(GameStatus.PLAYER_WIN);
+
+        when(gameRepository.findById("1")).thenReturn(Mono.just(game));
+
+        StepVerifier.create(gameService.play("1", MoveType.HIT))
+                .expectError()
+                .verify();
+    }
+
 }
 
