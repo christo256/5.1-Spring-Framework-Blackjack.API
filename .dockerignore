@@ -1,0 +1,8 @@
+/shelf/
+/workspace.xml
+.git
+.gitignore
+node_modules
+target/test-classes
+target/classes
+README.md
